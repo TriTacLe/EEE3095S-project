@@ -1,11 +1,14 @@
 import pathlib
 import subprocess
+import sys
 
 import pytest
 
-from transport import SerialTransport, SimTransport
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from link import SerialTransport, SimTransport  # noqa: E402
+
 SIM = ROOT / "sim" / "server_sim"
 
 
