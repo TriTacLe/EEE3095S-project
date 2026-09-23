@@ -44,6 +44,10 @@ client can derive whose turn it is by counting: equal counts means X to move.
 | `RESIGN` | `OK:GAMEOVER` | Forfeit. The other player is not credited a win. |
 | `DISCONNECT` | `OK` | End the session, back to IDLE. |
 
+Move checks run in the order range, turn, occupancy, so a client that names the
+wrong player hears about that rather than about a cell it has no business
+touching.
+
 `<i>` is a single decimal digit. A `MOVE` with a missing or non-numeric argument
 is `NACK:BADCMD`; a numeric one outside 0 to 8 is `NACK:RANGE`.
 
@@ -51,7 +55,7 @@ is `NACK:BADCMD`; a numeric one outside 0 to 8 is `NACK:RANGE`.
 
 | State | Accepts | Anything else |
 |---|---|---|
-| IDLE | `CONNECT`, `NEW` | `NACK:NOGAME` |
+| IDLE | `CONNECT`, `NEW`, `DISCONNECT` | `NACK:NOGAME` |
 | IN_PROGRESS | `MOVE`, `STATE`, `RESIGN` | `NACK:NOGAME` |
 | GAME_OVER | `NEW`, `STATE`, `DISCONNECT` | `NACK:NOGAME` |
 
@@ -61,13 +65,16 @@ board, because the terminal responses carry no board by design.
 
 ## Departures from the brief
 
-Three, all additive, none of them change a response the brief specifies:
+Four, all additive, none of them change a response the brief specifies:
 
 - `NACK:TOOLONG` for an over-length frame. The brief asks for a maximum frame
   length but names no error for hitting it.
 - The optional `MOVE:<i>:<p>` form. Without a player field a single client
   cannot be out of turn, so `NACK:NOTURN` would be unreachable and the
   out-of-turn requirement untestable.
+- `DISCONNECT` is also accepted in IDLE. The brief lists it only under
+  GAME_OVER, which would refuse a client that connects and then leaves without
+  playing. It is still refused mid-game.
 - An optional `*HH` checksum suffix on any request, `HH` being the XOR of every
   byte before the `*` as two uppercase hex digits. Absent, nothing is checked;
   present and wrong, the answer is `NACK:BADCRC` and the request is dropped.
@@ -83,5 +90,5 @@ MOVE:9             -> NACK:RANGE
 MOVE:0:O           -> OK:BOARD:O...X....
 MOVE:1:O           -> NACK:NOTURN
 STATE              -> BOARD:O...X....
-MOVE:8*3B          -> OK:BOARD:O...X...X
+MOVE:8*13          -> OK:BOARD:O...X...X
 ```
