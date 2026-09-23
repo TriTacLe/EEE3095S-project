@@ -1,9 +1,12 @@
-# Host build of the server core.
+# Host build of the board application: the same core and app sources the
+# firmware uses, with stdin and stdout in place of the UART.
 CC      = gcc
-CFLAGS  = -std=gnu99 -Wall -Wextra -Werror -O1 -I../server/core
-SRC     = main.c ../server/core/game.c ../server/core/protocol.c
+CFLAGS  = -std=gnu99 -Wall -Wextra -Werror -O1 -I../server/core -I../server/stm32
+SRC     = main.c ../server/core/game.c ../server/core/protocol.c ../server/stm32/app.c
+DEPS    = ../server/core/game.h ../server/core/protocol.h ../server/stm32/app.h \
+          ../server/stm32/port.h
 
-server_sim: $(SRC) ../server/core/game.h ../server/core/protocol.h
+server_sim: $(SRC) $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $(SRC)
 
 clean:
