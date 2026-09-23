@@ -1,0 +1,12 @@
+build/
+__pycache__/
+*.pyc
+.pytest_cache/
+report/*.aux
+report/*.log
+report/*.out
+report/*.pdf
+sim/server_sim
+.claude/
+CLAUDE.md
+.mcp.json
