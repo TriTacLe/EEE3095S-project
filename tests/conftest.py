@@ -31,6 +31,7 @@ def simulator_binary():
 def server(request, simulator_binary):
     port = request.config.getoption("--port")
     link = SerialTransport(port) if port else SimTransport(simulator_binary)
+    link.reset()
     try:
         yield link
     finally:

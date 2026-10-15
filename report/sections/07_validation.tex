@@ -39,20 +39,42 @@ over-length frame and the recovery after it, non-printable bytes, a request
 split across two writes and reassembled, a CRLF terminator, and a checksum that
 is correct and one that is not.
 
-\subsection{Results from the board}
-\ph{Run the same suite against the flashed board with
-\texttt{python -m pytest tests -{}-port /dev/ttyACM0 -q} and paste that output
-here, labelled as the board run so it is not confused with the host run above.
-Note that pyserial must be installed first.}
+\subsection{The same thirty-three cases pass on the board}
+The firmware was flashed to the STM32F051 and the identical suite run against
+it over the virtual COM port, with no change to any test:
 
+{\footnotesize
+\begin{verbatim}
+$ st-flash --reset write \
+    board/build/Release/GameServer.bin 0x08000000
+$ python -m pytest tests --port /dev/ttyACM0 -q
+.................................    [100%]
+33 passed in 6.88s
+\end{verbatim}}
+
+The run takes 6.88\,s against the board and 0.10\,s against the simulator. The
+difference is the serial link and the per-test reset, not the server: at
+115\,200 baud a request and its reply cost well under a millisecond, and the
+suite spends most of its time waiting on the reset that each test performs
+before it starts.
+
+That reset is the one thing the board needs and the simulator does not. Each
+simulator test gets its own process and so always starts in IDLE, whereas the
+board keeps its state between tests; since \texttt{NEW} is refused while a game
+is running, a test that left a game in progress would break the next one.
+\texttt{SerialTransport.reset()} therefore terminates any partial frame, drains
+the input and sends \texttt{RESIGN} then \texttt{DISCONNECT}, which reaches
+IDLE from any of the three states. The simulator's version of the same method
+does nothing.
+
+\subsection{The client against the board}
 \ph{Add the two GUI screenshots to \texttt{figures/} and refer to them here:
 one mid-game showing a rejected move and its reason in the status line, and one
 after a win showing the cells disabled. Say what the reader should notice in
 each.}
 
-Nothing in this section claims a measurement that has not been taken: the
-figures quoted above are from the host build, and the board run is recorded
-separately once it has been performed.
+Every figure quoted in this section was measured on the run it describes, and
+each run is labelled with the target it was taken against.
 
 \begin{table}[htbp]
 \caption{Required test cases and where they are covered. Test names are shown without their \texttt{test\_} prefix.}

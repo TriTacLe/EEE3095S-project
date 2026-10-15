@@ -43,6 +43,9 @@ class SimTransport:
         self.send(line)
         return self.recv(timeout)
 
+    def reset(self):
+        """Nothing to do: every test gets its own process, already in IDLE."""
+
     def close(self):
         self.proc.stdin.close()
         self.proc.terminate()
@@ -75,6 +78,24 @@ class SerialTransport:
     def ask(self, line, timeout=2.0):
         self.send(line)
         return self.recv(timeout)
+
+    def reset(self):
+        """Put the board back in IDLE with an empty game.
+
+        Unlike the simulator the board survives between tests, so a test that
+        leaves a game running would break the next one: NEW is refused while a
+        game is in progress. RESIGN then DISCONNECT reaches IDLE from any of
+        the three states, and either may be refused along the way.
+        """
+        self.ser.write(b"\n")          # end any partial frame left behind
+        time.sleep(0.05)
+        self.ser.reset_input_buffer()
+        for command in ("RESIGN", "DISCONNECT"):
+            self.send(command)
+            try:
+                self.recv(timeout=1.0)
+            except TimeoutError:
+                pass
 
     def close(self):
         self.ser.close()
