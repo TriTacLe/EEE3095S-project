@@ -24,6 +24,8 @@ BG = "#f4f4f2"
 FG = "#1b1b1b"
 ACCENT = "#1d4ed8"
 MUTED = "#4a4a4a"
+CELL = "#ffffff"
+CELL_LOCKED = "#e4e4e0"   # a finished board reads as inactive at a glance
 
 
 class Client(tk.Tk):
@@ -52,7 +54,7 @@ class Client(tk.Tk):
                 height=1,
                 font=self.cell_font,
                 fg=FG,
-                bg="#ffffff",
+                bg=CELL,
                 activebackground="#e8eeff",
                 highlightthickness=1,
                 command=lambda i=i: self.on_cell(i),
@@ -115,10 +117,12 @@ class Client(tk.Tk):
         request = self.pending.pop(0) if self.pending else ""
         view = interpret(request, reply)
 
-        if view.board is not None:
-            self.draw(view.board)
+        # Playability first: draw() reflects it, and a STATE redraw after a
+        # finished game must not make the cells look live again.
         if view.playable is not None:
             self.playable = view.playable
+        if view.board is not None:
+            self.draw(view.board)
         if view.finished:
             self.lock_board()
             self.send("STATE")
@@ -126,13 +130,16 @@ class Client(tk.Tk):
             self.say(view.message)
 
     def draw(self, board):
+        live = self.playable
         for i, cell in enumerate(board[:9]):
             self.cells[i].config(text=" " if cell == "." else cell,
-                                 state="normal", disabledforeground=FG)
+                                 state="normal" if live else "disabled",
+                                 bg=CELL if live else CELL_LOCKED,
+                                 disabledforeground=FG)
 
     def lock_board(self):
         for b in self.cells:
-            b.config(state="disabled", disabledforeground=FG)
+            b.config(state="disabled", bg=CELL_LOCKED, disabledforeground=FG)
 
     def say(self, message):
         self.status.config(text=message)
