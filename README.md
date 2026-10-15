@@ -15,10 +15,19 @@ the game state and the client is never trusted with a rule.
 | `sim/` | host build of the same core, speaks the protocol over stdin and stdout |
 | `client/` | Tkinter GUI |
 | `tests/` | pytest harness, runs against the simulator or a serial port |
-| `report/` | the report |
+| `report/` | the report, LaTeX on the course template |
 
 The same `server/core/` sources build for the board and for the host, so a rule
 bug is found on a laptop and not in the lab.
+
+## Setup
+
+```
+pip install -r requirements.txt
+```
+
+`pytest` is needed for the test harness and `pyserial` only to talk to the
+board. The simulator and the firmware need no Python packages.
 
 ## Running without a board
 
@@ -39,3 +48,13 @@ python client/gui.py --port /dev/ttyACM0
 
 One USB cable carries both the flashing and the serial link; see
 `board/README.md`.
+
+## Building the report
+
+```
+make -C report          # builds report/main.pdf
+make -C report check    # lists anything still unwritten
+```
+
+`IEEEtran.cls` and `IEEEtran.bst` are vendored in `report/`, so a plain TeX Live
+installation is enough and `texlive-publishers` is not required.

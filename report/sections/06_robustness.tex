@@ -1,0 +1,32 @@
+\section{Protocol Robustness and Integrity}
+\label{sec:robust}
+
+\subsection{The parser assumes the line is hostile}
+Over-length input is bounded by the 64-byte frame limit and answered
+\texttt{NACK:TOOLONG}, with the remainder of the offending line discarded so
+that its tail is not then parsed as a fresh command. Non-printable bytes are
+dropped as they arrive rather than buffered. A partial frame is abandoned after
+2000\,ms, so a client that dies mid-line releases the parser without
+intervention. A bare newline is ignored rather than answered.
+
+An unrecognised command is \texttt{NACK:BADCMD}, and a \texttt{MOVE} whose
+argument is missing or non-numeric is also \texttt{NACK:BADCMD}, while a numeric
+argument outside 0 to 8 is \texttt{NACK:RANGE}. The two are distinguished
+because they indicate different client faults: the first is a malformed
+request, the second a well-formed request for an impossible cell.
+
+Every rejection is explicit. The server never answers silence, so a client can
+always distinguish a refused request from a lost one by timeout alone.
+
+\subsection{The checksum detects corruption, not forgery}
+An optional \texttt{*HH} suffix carries an XOR of every byte before the
+\texttt{*}, as two hex digits in either case. When the suffix is absent the
+message is accepted unchecked; when it is present and wrong the message is
+answered \texttt{NACK:BADCRC} and dropped.
+
+It detects single-byte corruption and most burst corruption on the wire, which
+is what a short UART link is likely to suffer. It is not a cryptographic check:
+an XOR is trivially forgeable, it cannot detect a transposition of two bytes,
+and it offers nothing against replay or against a client that is simply lying
+about whose turn it is. Integrity against a hostile client is provided by server
+authority, as argued in Section~\ref{sec:authority}, and not by the checksum.

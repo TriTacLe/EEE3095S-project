@@ -1,0 +1,53 @@
+\section{Implementation}
+\label{sec:impl}
+
+\subsection{The receive path cannot block}
+Bytes arrive one at a time in the USART1 receive interrupt and are appended to
+a line buffer. The interrupt does no parsing: it tests for the terminator, and
+only when a complete line is present does it hand that line to the protocol
+layer. Nothing in the receive path waits on anything, so a client that stops
+mid-message costs the board nothing but a buffer that the 2000\,ms timeout will
+later clear. An overrun is cleared and the byte dropped rather than left to
+wedge the receiver, because the parser already recovers at the next newline.
+
+\subsection{Three checks, one write}
+\texttt{game\_move()} tests range, then turn, then occupancy, and each check
+returns before the board is touched:
+
+\begin{verbatim}
+if (index < 0 || index >= GAME_CELLS)
+    return MOVE_ERR_RANGE;
+if (player != 0 && player != g->turn)
+    return MOVE_ERR_NOTURN;
+if (g->cells[index] != '.')
+    return MOVE_ERR_OCCUPIED;
+
+g->cells[index] = g->turn;
+\end{verbatim}
+
+There is exactly one assignment to \texttt{g->cells}, and all three rejection
+paths return above it. That structure, rather than an inspection of every path,
+is what makes the authority argument in Section~\ref{sec:authority} hold.
+
+\subsection{One core, two targets}
+\texttt{server/core/} contains the rules and the frame parser in plain C with
+no HAL and no hardware headers. \texttt{server/stm32/port\_stm32.c} is the only
+file that knows about the board, and it provides the functions declared in
+\texttt{port.h}: bring up the USART, service its interrupt, transmit a line,
+drive the LED, read the button and report a millisecond tick. The same core
+therefore builds unchanged for the board and for the host simulator in
+\texttt{sim/}, so a rule bug is found on a laptop in milliseconds rather than
+on the bench.
+
+The board project in \texttt{board/} reaches the shared sources through linked
+folders rather than copying them, so there is one copy of every file and the
+two builds cannot drift apart. GPIO goes through the HAL because the GPIO
+driver ships with the course project, while USART1 is configured from registers
+against the reference manual~\cite{rm0091} because the vendored HAL has no UART
+driver at all. At 48\,MHz and 115\,200 baud with oversampling by 16 the baud
+rate register is the divisor itself, so \texttt{BRR} is 417, which gives
+115\,107 baud and an error of 0.08\,per cent.
+
+The release build occupies 4984 bytes of flash and 2720 bytes of RAM, against
+the 32\,kB and 8\,kB available on the STM32F051C6, so neither is close to a
+constraint.

@@ -1,0 +1,83 @@
+\section{Requirements and Message Protocol}
+\label{sec:protocol}
+
+The link carries printable ASCII, one message per line. The client sends a
+request and the server answers with exactly one line. The server never speaks
+first, so the PC side never has to poll for unsolicited traffic.
+
+\subsection{One newline-terminated line bounds every message}
+A message is terminated by \texttt{\textbackslash n}. A
+\texttt{\textbackslash r} immediately before it is accepted and discarded, so a
+terminal that sends CRLF interoperates without a separate mode. Four limits
+bound what the parser will accept:
+
+\begin{itemize}
+  \item a frame is at most 64 bytes including the terminator, which leaves 63
+        characters of payload; a longer line is discarded up to and including
+        the next \texttt{\textbackslash n} and answered
+        \texttt{NACK:TOOLONG};
+  \item a frame left incomplete for 2000\,ms is cleared, so a client that dies
+        mid-line cannot wedge the parser;
+  \item bytes outside printable ASCII, that is below \texttt{0x20} or above
+        \texttt{0x7E}, are dropped as they arrive rather than buffered;
+  \item commands are uppercase, and anything unrecognised is
+        \texttt{NACK:BADCMD}.
+\end{itemize}
+
+None of these paths can change the game. A rejected, truncated or malformed
+request leaves the board, the turn and the game status exactly as they were.
+
+\subsection{The board travels as nine characters}
+The board is nine characters, index 0 to 8, row major, where \texttt{.} is an
+empty cell and \texttt{X} and \texttt{O} are the players. X always moves first,
+so the client derives whose turn it is by counting: equal counts means X to
+move. The client therefore holds no authoritative state of its own.
+
+\subsection{Every request has exactly one documented reply}
+Table~\ref{tab:protocol} lists the command set. The reader should notice that
+every rejection is named: there is no request whose failure produces silence,
+which is what lets the client distinguish a refused request from a lost one.
+
+\begin{table}[htbp]
+\caption{Command set and responses}
+\label{tab:protocol}
+\centering
+\footnotesize
+\begin{tabular}{p{1.8cm}p{3.1cm}p{2.0cm}}
+\hline
+\textbf{Request} & \textbf{Response} & \textbf{Meaning} \\
+\hline
+\texttt{CONNECT} & \texttt{OK} & open a session \\
+\texttt{NEW} & \texttt{OK:BOARD:.........} & start a game, X to move \\
+\texttt{MOVE:<i>} & \texttt{OK:BOARD:<9>} & legal move \\
+\texttt{MOVE:<i>} & \texttt{WIN:X}, \texttt{WIN:O}, \texttt{DRAW} & the move ended it \\
+\texttt{MOVE:<i>} & \texttt{NACK:RANGE}, \texttt{NACK:OCCUPIED}, \texttt{NACK:NOTURN} & rejected, nothing changed \\
+\texttt{STATE} & \texttt{BOARD:<9>} & current board \\
+\texttt{RESIGN} & \texttt{OK:GAMEOVER} & forfeit \\
+\texttt{DISCONNECT} & \texttt{OK} & end session \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Four departures from the reference protocol}
+Each departure closes a failure the reference protocol in the brief leaves
+open, and none of them changes a response the brief specifies.
+
+\textbf{\texttt{NACK:TOOLONG}} exists because the reference defines no reply
+for an over-length line, which would otherwise leave the client waiting on a
+response that never comes.
+
+\textbf{The optional player field on \texttt{MOVE}}, written
+\texttt{MOVE:<i>:<p>} where \texttt{<p>} is \texttt{X} or \texttt{O}, lets a
+client state whose move it believes it is sending. The server then answers
+\texttt{NACK:NOTURN} rather than silently applying the move to the player whose
+turn it actually is. Without such a field a single client cannot be out of
+turn, so the brief's own out-of-turn requirement would be untestable.
+
+\textbf{\texttt{DISCONNECT} from IDLE} is accepted so that a client
+reconnecting after a crash does not have to know what state it left behind. It
+is still refused mid-game.
+
+\textbf{An optional \texttt{*HH} checksum suffix} may be appended to any
+request. Its scope and its limits are discussed in
+Section~\ref{sec:robust}.

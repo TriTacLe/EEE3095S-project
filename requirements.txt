@@ -1,0 +1,5 @@
+# Client and test harness. The simulator and the firmware need no Python.
+# pyserial is only needed to talk to the board over the serial port;
+# the host-simulator test run works without it.
+pyserial>=3.5
+pytest>=7.0

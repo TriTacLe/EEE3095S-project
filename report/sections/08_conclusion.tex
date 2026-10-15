@@ -1,0 +1,33 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+The system works and the design decision at the centre of it holds up. Keeping
+the microcontroller authoritative made the client trivial to write and
+impossible to cheat with, and the tests demonstrate the property directly rather
+than arguing for it: every rejection case reads the board, issues a request that
+must fail, and asserts the board is unchanged.
+
+The decision with the largest practical payoff was separating the rules from the
+hardware. Because \texttt{server/core/} has no HAL in it, the same sources run
+on a host simulator, which meant the protocol and the game logic were finished
+and tested before the board was involved at all. On a project with a fixed
+deadline that converts bench time into laptop time, which is the cheaper of the
+two.
+
+\textbf{Limitations.} The server holds one game and one session, so it cannot
+serve two clients at once; the state machine would need a session table rather
+than a single \texttt{game\_t} to do so. Frames are capped at 64 bytes, which is
+comfortable for this protocol but would need revisiting for a larger board. The
+optional checksum detects corruption on the wire but is an XOR, so it is not
+forgery-resistant, and integrity against a hostile client rests on server
+authority instead. Transmission from the board is blocking with a timeout, which
+is acceptable at 115\,200 baud and one short line per request but would not
+scale to a chattier protocol.
+
+\textbf{Further work.} The most natural extension is the AI opponent listed
+among the bonus features, which fits the architecture without changing the
+protocol: the server already owns the state, so it can generate a reply move
+after a client move, and the existing suite could assert that it never plays
+illegally. Beyond that, a session table would allow multiple concurrent games,
+and a larger board would mostly be a matter of relaxing the frame limit and the
+index parser.

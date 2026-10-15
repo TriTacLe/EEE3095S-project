@@ -1,0 +1,230 @@
+\section{Specification and Design}
+\label{sec:design}
+
+\subsection{The board decides, the client draws}
+Responsibility is split so that the board is the only component that can decide
+anything. The STM32 holds the game state, validates every request and emits the
+single authoritative reply. The PC client renders what it is told and forwards
+clicks; it enforces no rule, which is why a modified or hostile client cannot
+produce an illegal position.
+
+Table~\ref{tab:split} sets out who owns what. The pattern to notice is that
+every row the client owns is presentation, and every row that could change the
+outcome of the game sits on the board.
+
+\begin{table}[htbp]
+\caption{Where each decision is taken. Board modules are under \texttt{server/}, client modules under \texttt{client/}.}
+\label{tab:split}
+\centering
+\footnotesize
+\begin{tabular}{p{3.7cm}p{1.2cm}p{1.9cm}}
+\hline
+\textbf{Decision} & \textbf{Owner} & \textbf{Module} \\
+\hline
+Board contents & board & \texttt{game.c} \\
+Whose turn it is & board & \texttt{game.c} \\
+Whether a move is legal & board & \texttt{game.c} \\
+Win and draw detection & board & \texttt{game.c} \\
+Framing and dispatch & board & \texttt{protocol.c} \\
+Button and LED meaning & board & \texttt{app.c} \\
+When to redraw & client & \texttt{gui.py} \\
+What a reply means to the user & client & \texttt{session.py} \\
+\hline
+\end{tabular}
+\end{table}
+
+The firmware is layered so that only one file is hardware-dependent.
+\texttt{server/core/} is plain C with no HAL. \texttt{server/stm32/app.c} owns
+the button, the LED and the main-loop behaviour but still has no HAL in it, and
+\texttt{server/stm32/port\_stm32.c} is the single file that touches registers.
+That is what allows the host simulator in \texttt{sim/} to compile the identical
+core and application sources.
+
+\subsection{A rejected move returns before the board is written}
+Fig.~\ref{fig:fsm} gives the server FSM together with the move-validation
+branch. The three states are IDLE, IN\_PROGRESS and GAME\_OVER. IDLE accepts
+\texttt{CONNECT} and \texttt{NEW}; IN\_PROGRESS accepts \texttt{MOVE},
+\texttt{STATE} and \texttt{RESIGN}; GAME\_OVER accepts \texttt{NEW},
+\texttt{STATE} and \texttt{DISCONNECT}. Any command a state does not accept is
+answered \texttt{NACK:NOGAME} and changes nothing, which is why those edges are
+not drawn individually.
+
+The validation branch is the part worth reading closely. A \texttt{MOVE} passes
+three checks in a fixed order, range then turn then occupancy, and each one
+exits to its own \texttt{NACK} before the board is touched. Only when all three
+pass is the cell written, and only then is the win and draw test run. The
+ordering is deliberate: a client that names the wrong player is told so, rather
+than being told about a cell it had no business addressing.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[>=Stealth, font=\small,
+    st/.style={draw, rounded corners=2pt, minimum width=2.4cm, minimum height=0.9cm},
+    chk/.style={draw, diamond, aspect=2.2, inner sep=1pt, font=\footnotesize},
+    act/.style={draw, minimum width=2.2cm, minimum height=0.8cm, font=\footnotesize},
+    nack/.style={draw, dashed, minimum height=0.7cm, font=\footnotesize},
+    note/.style={font=\footnotesize, align=left},
+    lbl/.style={font=\scriptsize, align=center}]
+
+  % ---------------- panel (a): the three states
+  \node[note, anchor=west, font=\footnotesize\bfseries] at (-1.0,1.9) {(a) Server states};
+
+  \node[st] (idle) at (0.6,0)   {IDLE};
+  \node[st] (prog) at (6.2,0)   {IN\_PROGRESS};
+  \node[st] (over) at (12.4,0)  {GAME\_OVER};
+
+  \draw[->] (idle) to[loop above] node[lbl, above]{CONNECT / OK} (idle);
+  \draw[->] (prog) to[loop above] node[lbl, above]{STATE / BOARD} (prog);
+  \draw[->] (idle) -- node[lbl, above]{NEW /\\OK:BOARD} (prog);
+  \draw[->] (prog) -- node[lbl, above]{WIN, DRAW, RESIGN /\\WIN:p, DRAW, OK:GAMEOVER} (over);
+  \draw[->] (over) to[out=140, in=40, looseness=0.7]
+        node[lbl, above]{NEW / OK:BOARD} (prog);
+  \draw[->] (over.south) -- ++(0,-0.8) coordinate (d)
+        -- node[lbl, below]{DISCONNECT / OK} (d -| idle.south) -- (idle.south);
+
+  \node[note, anchor=north west, text width=15.5cm] at (-1.0,-2.0)
+    {Any command a state does not accept is answered \texttt{NACK:NOGAME} and
+     changes nothing, so those edges are not drawn.};
+
+  % ---------------- panel (b): what MOVE does inside IN_PROGRESS
+  \node[note, anchor=west, font=\footnotesize\bfseries] at (-1.0,-3.1)
+    {(b) The \texttt{MOVE} validation branch, taken inside IN\_PROGRESS};
+
+  \node[act] (mv) at (0.6,-4.4) {\texttt{MOVE:}$i$};
+  \node[chk] (c1) at (4.3,-4.4) {$0 \le i \le 8$?};
+  \node[chk] (c2) at (8.0,-4.4) {player = turn?};
+  \node[chk] (c3) at (11.7,-4.4) {cell empty?};
+  \node[act] (wr) at (15.0,-4.4) {write the cell};
+
+  \draw[->] (mv) -- (c1);
+  \draw[->] (c1) -- node[lbl, above]{yes} (c2);
+  \draw[->] (c2) -- node[lbl, above]{yes} (c3);
+  \draw[->] (c3) -- node[lbl, above]{yes} (wr);
+
+  \node[nack] (n1) at (4.3,-6.0) {\texttt{NACK:RANGE}};
+  \node[nack] (n2) at (8.0,-6.0) {\texttt{NACK:NOTURN}};
+  \node[nack] (n3) at (11.7,-6.0) {\texttt{NACK:OCCUPIED}};
+  \draw[->] (c1) -- node[lbl, right]{no} (n1);
+  \draw[->] (c2) -- node[lbl, right]{no} (n2);
+  \draw[->] (c3) -- node[lbl, right]{no} (n3);
+
+  \node[note, anchor=north, text width=3.4cm] at (15.0,-5.3)
+    {then test the eight lines:\\
+     win or draw $\rightarrow$ GAME\_OVER,\\
+     otherwise \texttt{OK:BOARD} and
+     the turn swaps};
+
+  \node[note, anchor=north west, text width=12.0cm] at (-1.0,-7.0)
+    {The three checks run in this order and each returns before the cell is
+     written, so every dashed exit leaves the board, the turn and the status
+     exactly as they were.};
+\end{tikzpicture}
+\caption{Server FSM (a) and the \texttt{MOVE} validation branch (b). The
+validation chain sits inside the IN\_PROGRESS state: all three rejections exit
+above the single write to the board.}
+\label{fig:fsm}
+\end{figure*}
+
+\subsection{The client never blocks on the board}
+Fig.~\ref{fig:gui} is the client flow. On start it opens the serial port and
+sends \texttt{CONNECT}; the New Game button sends \texttt{NEW}; a click on cell
+$i$ sends \texttt{MOVE:}$i$ and then repaints from whatever board string comes
+back. A \texttt{NACK} is shown verbatim in the status line and the board is left
+untouched, because the board the client holds is only ever a copy of the
+server's. After a win or a draw the cells are disabled until a new game is
+started, and \texttt{STATE} is issued once more so the final position is drawn
+from the server rather than from the client's own guess.
+
+The window does not freeze while a reply is outstanding. A daemon reader thread
+blocks on the transport and pushes each line it receives onto a
+\texttt{queue.Queue}; the Tk main loop drains that queue every 50\,ms through
+\texttt{after()} and does all drawing there. A board that never answers
+therefore costs a background thread, not the user interface, and the reader
+applies its own timeout so a dead link surfaces as a message rather than a hang.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Stealth, node distance=0.72cm, font=\footnotesize,
+    bx/.style={draw, rounded corners=2pt, text width=3.1cm, align=center,
+               minimum height=0.6cm},
+    df/.style={draw, diamond, aspect=2.4, inner sep=1pt, align=center},
+    lbl/.style={font=\scriptsize, align=center}]
+
+  \node[bx] (start) {open the port, send \texttt{CONNECT}};
+  \node[bx, below=of start] (wait) {wait for input};
+  \node[bx, below=of wait] (send) {send \texttt{NEW} or \texttt{MOVE:}$i$};
+  \node[df, below=of send] (rep) {reply?};
+  \node[bx, below=1.15cm of rep] (draw) {redraw the board from the reply};
+  \node[bx, below=of draw] (over) {announce, disable the cells, send \texttt{STATE}};
+
+  \draw[->] (start) -- (wait);
+  \draw[->] (wait) -- (send);
+  \draw[->] (send) -- (rep);
+  \draw[->] (rep) -- node[lbl, right]{\texttt{OK:BOARD}} (draw);
+  \draw[->] (draw) -- node[lbl, right]{\texttt{WIN} or \texttt{DRAW}} (over);
+
+  % right, inner: a NACK goes straight back to waiting
+  \draw[->] (rep.east) -- ++(0.62,0) |- node[lbl, right, pos=0.42]
+    {\texttt{NACK}:\\no redraw} (wait.east);
+  % right, outer: a finished game waits for a new one
+  \draw[->] (over.east) -- ++(1.5,0) |- (wait.east);
+  % left, inner: an ordinary redraw returns to waiting
+  \draw[->] (draw.west) -- ++(-0.62,0) |- (wait.west);
+  % left, outer: a timeout or a closed port
+  \draw[->] (rep.west) -- ++(-1.5,0) |- node[lbl, left, pos=0.42]
+    {timeout or\\closed port} (wait.west);
+\end{tikzpicture}
+\caption{Client flow. Every redraw is driven by a server reply; a
+\texttt{NACK} and a timeout both return to waiting without touching the board.}
+\label{fig:gui}
+\end{figure}
+
+\subsection{One USB cable carries both the flashing and the link}
+Fig.~\ref{fig:circuit} shows the connection. USART1 is PA9 for transmit and
+PA10 for receive, and on this board both are wired on-board to the ST-LINK,
+which also presents a USB virtual COM port. One cable therefore does both jobs
+and no external USB-to-UART converter is involved, which is what the course
+confirmed on 5 October 2026. The link runs at 115\,200 baud, 8 data bits, no
+parity, one stop bit, no flow control, and the PC side appears as
+\texttt{/dev/ttyACM0} on Linux.
+
+Button0 is on PA0 behind a pull-up, so a press reads low, and the application
+debounces it over 20\,ms and then feeds a synthetic \texttt{NEW} through the
+server rather than resetting the game behind the protocol's back. LED0 is on
+PB0 and reports whose turn it is: solid while X is to move, off while O is, and
+blinking at 400\,ms once the game is over. A glance at the board therefore says
+whose turn it is without looking at the GUI.
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[american, scale=0.74, transform shape,
+                   every node/.append style={font=\footnotesize}]
+  \node[draw, minimum width=1.2cm, minimum height=0.9cm] (pc)  at (0,0)    {PC};
+  \node[draw, minimum width=2.1cm, minimum height=0.9cm] (stl) at (2.9,0)  {ST-LINK VCP};
+  \node[draw, minimum width=2.0cm, minimum height=2.6cm] (mcu) at (7.2,-0.7) {STM32F051};
+
+  \draw (pc.east) -- node[above, font=\scriptsize]{USB} (stl.west);
+
+  % USART1 to the on-board ST-LINK
+  \draw[->] ([yshift=0.2cm]stl.east) -- node[above, font=\scriptsize]{PA9 TX}
+        ([yshift=0.75cm]mcu.west);
+  \draw[<-] ([yshift=-0.2cm]stl.east) -- node[below, font=\scriptsize]{PA10 RX}
+        ([yshift=0.25cm]mcu.west);
+
+  % Button0 on PA0, active low
+  \draw ([yshift=-0.7cm]mcu.west) -- ++(-1.5,0) coordinate (b)
+        node[above, pos=0.55, font=\scriptsize]{PA0};
+  \draw (b) to[push button, l_={\scriptsize Button0}] ++(0,-1.3) node[ground]{};
+
+  % LED0 on PB0
+  \draw ([yshift=0.5cm]mcu.east) -- ++(1.2,0) coordinate (d)
+        node[above, pos=0.55, font=\scriptsize]{PB0};
+  \draw (d) to[R, l^={\scriptsize $R_s$}] ++(0,-1.1)
+        to[leD, l^={\scriptsize LED0}] ++(0,-1.1) node[ground]{};
+\end{circuitikz}
+\caption{UART path and board I/O. One USB cable carries both the programming
+interface and the virtual COM port that USART1 is wired to. Button0 is active
+low and starts a new game; LED0 is solid while X is to move, off while O is,
+and blinks at 400\,ms once the game is over.}
+\label{fig:circuit}
+\end{figure}
