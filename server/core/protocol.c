@@ -117,7 +117,6 @@ static void dispatch(server_t *s, char *line, char *out, size_t out_sz)
 
     if (strcmp(line, "CONNECT") == 0 && arg == NULL)
     {
-        s->connected = 1;
         reply(out, out_sz, "OK");
         return;
     }
@@ -170,7 +169,6 @@ static void dispatch(server_t *s, char *line, char *out, size_t out_sz)
             reply(out, out_sz, "NACK:NOGAME");
             return;
         }
-        s->connected = 0;
         game_init(&s->game);
         reply(out, out_sz, "OK");
         return;

@@ -112,15 +112,15 @@ what the server says about it.
 
 ```mermaid
 flowchart LR
-    PC[PC] -- USB A to B --> PROG[programmer and power]
-    PROG --> STM[STM32F051 course board]
-    PC -- USB to micro USB --> ADP[STM32USB2UART adapter]
-    ADP -- TX to RX, RX to TX, GND to GND --> STM
-    STM --- LED[green LED, turn indicator]
-    STM --- BTN[button SW0, new game]
+    PC[PC] -- one USB cable --> STL[ST-LINK on the board]
+    STL -- SWD --> STM[STM32F051 course board]
+    STL -- virtual COM port --> VCP["/dev/ttyACM0 on the PC"]
+    VCP -- USART1, PA9 TX and PA10 RX --> STM
+    STM --- LED[LED0 on PB0, turn indicator]
+    STM --- BTN[Button0 on PA0, new game]
 ```
 
-Two USB connections, and they do different jobs: one powers and flashes the
-board, the other is the serial port the client opens. 115200 8N1, no flow
-control. The adapter's TX goes to the board's UART RX and its RX to the board's
-TX, grounds common.
+One USB cable does both jobs. The on-board ST-LINK flashes the part over SWD
+and presents a USB virtual COM port that is wired to USART1, so the client
+opens that port and no external adapter is involved. 115200 8N1, no flow
+control.

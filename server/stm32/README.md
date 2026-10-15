@@ -4,35 +4,25 @@
 the LED. It has no HAL in it, so it compiles on a laptop and the rules can be
 tested without hardware.
 
-`port_hal.c` is the only file that knows about the board. It provides the four
-functions in `port.h` and wires the UART receive interrupt to the parser.
+`port_stm32.c` is the only file that knows about the board. It provides the
+functions in `port.h` and feeds the USART receive interrupt to the parser.
 
-## Building it
+The CubeIDE project that builds these lives in `board/`. It links to this
+directory and to `server/core/` rather than copying them, so there is one copy
+of every source and the host simulator in `sim/` compiles the same files. See
+`board/README.md` for how to build and flash.
 
-1. New STM32CubeIDE project for the STM32F051 on the course board.
-2. Enable the USART the STM32USB2UART adapter reaches, asynchronous, 115200,
-   8 data bits, no parity, 1 stop bit, no flow control. Confirm the TX and RX
-   pins against the board pinout before generating code.
-3. Enable the USART global interrupt in the NVIC tab.
-4. Copy `server/core/*.c`, `server/core/*.h`, `app.c`, `app.h`, `port.h` and
-   `port_hal.c` into `Core/Src` and `Core/Inc`.
-5. In the generated `main.c`, between the USER CODE markers:
+## Pins
 
-```c
-app_init();
-HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-while (1)
-{
-    app_poll();
-}
-```
-
-The button and LED pins at the top of `port_hal.c` are the ones the practicals
-used. Check them against this board before the first run.
+Button0 on PA0, behind a pull-up and so active low. LED0 on PB0. Both taken
+from the Practical 1A and 1B projects that ran on this board, where the buttons
+sit on PA0 to PA3 and the LEDs on PB0 to PB7.
 
 ## Hardware
 
-The adapter board, its 2 x 5 header and the soldering are the course UART
-tutorial's job. 115200 8N1, adapter TX to board RX and adapter RX to board TX,
-grounds together, and the UART cable is a second USB connection separate from
-the programming one.
+No external adapter. USART1 (PA9 TX, PA10 RX) is wired on-board to the ST-LINK,
+which doubles as a USB virtual COM port, so the cable you flash with also gives
+the PC a serial port. 115200 8N1. The PC side appears as /dev/ttyACM0 on Linux.
+
+The UART adapter boards handed out earlier are for the older dev boards and the
+course has asked for them back; do not use one here.
