@@ -10,7 +10,8 @@ the game state and the client is never trusted with a rule.
 |---|---|
 | `docs/` | protocol definition and the design diagrams |
 | `server/core/` | the rules and the frame parser, plain C, no hardware |
-| `server/stm32/` | CubeIDE project: UART, button, LED, main loop |
+| `server/stm32/` | board application and the port layer: UART, button, LED |
+| `board/` | CubeIDE project for the STM32F051, builds the two above |
 | `sim/` | host build of the same core, speaks the protocol over stdin and stdout |
 | `client/` | Tkinter GUI |
 | `tests/` | pytest harness, runs against the simulator or a serial port |
@@ -30,6 +31,11 @@ python client/gui.py --sim
 ## Running against the board
 
 ```
+make -C board CONFIG=Release
+st-flash write board/build/Release/GameServer.bin 0x08000000
 python -m pytest tests --port /dev/ttyACM0
 python client/gui.py --port /dev/ttyACM0
 ```
+
+One USB cable carries both the flashing and the serial link; see
+`board/README.md`.

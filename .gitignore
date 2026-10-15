@@ -10,3 +10,4 @@ sim/server_sim
 .claude/
 CLAUDE.md
 .mcp.json
+board/build/

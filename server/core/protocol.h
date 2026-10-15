@@ -16,7 +16,6 @@ typedef struct {
     size_t   len;
     int      discarding;      /* over-length: skip to the next newline */
     unsigned last_rx_ms;
-    int      connected;
     game_t   game;
 } server_t;
 
