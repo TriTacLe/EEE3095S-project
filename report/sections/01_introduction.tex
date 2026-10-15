@@ -1,0 +1,56 @@
+\section{Introduction}
+\label{sec:intro}
+
+A networked game has to decide where the rules live. If the client enforces
+them, every client is part of the trusted computing base and a single modified
+or buggy one can corrupt the game. If the server enforces them, the client can
+be as simple and as untrusted as you like. This project takes the second
+position and pushes it to its limit, as the brief requires~\cite{brief}: the
+microcontroller is the only component that may change state, and the PC
+application is a view with a mouse attached. The property the design guarantees
+is narrow and testable, namely that a rejected request never changes the game
+state.
+
+\textbf{The game.} Tic-tac-toe was chosen because its rules are small enough to
+implement exactly and to test exhaustively, which puts the interesting work in
+the protocol and the authority model rather than in game logic. A nine-cell
+board also encodes in nine ASCII characters, so a full board fits in one short
+line and the whole state can be sent after every move instead of a delta. That
+removes an entire class of client and server disagreeing about state.
+
+\textbf{The GUI library.} Tkinter~\cite{tkinter} was chosen because it ships
+with CPython, so the marker needs no package installation to run the client, and
+because a three-by-three grid of buttons is exactly what it is good at. It also
+has a timer facility that makes it straightforward to keep the window responsive
+while a reply is outstanding, which Section~\ref{sec:design} describes. A
+heavier toolkit would have added a dependency and bought nothing the application
+needs.
+
+\textbf{Design choices.} The rules and the frame parser are plain C with no
+hardware abstraction layer (HAL) and no hardware headers, so the same sources
+compile for the STM32 and for a host simulator. One file isolates everything
+board-specific behind a handful of functions. Messages are framed as single
+newline-terminated lines of printable ASCII with a bounded length, which makes
+the parser a small finite-state machine (FSM) that can be reasoned about and
+fuzzed from a test. The practical consequence is that a rule bug is found in
+milliseconds on a laptop rather than on the bench with a debugger.
+
+\textbf{Task allocation.} This project was done individually, so there is no
+split of work between two students to report. It was nonetheless organised as if
+it were a team: each piece of functionality was developed on its own branch and
+merged through a pull request, with the game core, the protocol, the GUI, the
+board application and the documentation each landing separately. Reviewing one's
+own pull request catches less than a second reader would, but it still forces
+the diff to be read once in isolation, keeps unrelated changes from travelling
+together, and leaves a history in which each change can be read, and if
+necessary reverted, on its own.
+
+\textbf{Structure.} Section~\ref{sec:protocol} defines the message protocol,
+since every other part of the system is specified against it.
+Section~\ref{sec:design} gives the responsibility split, the server FSM, the
+client flow and the hardware connection. Section~\ref{sec:impl} describes how
+the firmware is put together, Section~\ref{sec:authority} argues the authority
+property from the structure of the code, and Section~\ref{sec:robust} covers
+what the parser does with hostile input. Section~\ref{sec:valid} reports the
+automated validation and Section~\ref{sec:conclusion} draws conclusions and
+names the limitations.

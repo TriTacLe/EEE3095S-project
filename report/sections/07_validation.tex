@@ -1,0 +1,75 @@
+\section{Validation}
+\label{sec:valid}
+
+\subsection{One suite, two targets}
+The automated suite is written with pytest~\cite{pytest}. It drives the comms
+interface with no human interaction and runs against two targets from the same
+test files. By default it starts the host
+simulator and speaks the protocol over its standard input and output; given
+\texttt{-{}-port} it opens a serial port through pyserial~\cite{pyserial} and
+speaks to the flashed board instead. The fixture that performs that substitution is the only thing that
+differs between the two runs, so a case that passes on the host is the same case
+on the board.
+
+\subsection{Thirty-three cases pass on the host build}
+The following is a run on the host simulator, on a PC, with no board attached:
+
+{\footnotesize
+\begin{verbatim}
+$ make -C sim && python -m pytest tests -q
+.................................    [100%]
+33 passed in 0.10s
+\end{verbatim}}
+
+Table~\ref{tab:tests} maps each case the brief requires onto the test that
+covers it. The suite is a regression check rather than a demonstration: every
+run either reproduces the protocol exactly or fails.
+
+The cases fall into three groups. The first confirms the happy path, that
+\texttt{CONNECT} is answered and \texttt{NEW} produces an empty board. The
+second confirms that a legal move changes the board \emph{exactly} as expected,
+comparing the whole nine-character string rather than the single cell, so a move
+that corrupted a neighbouring cell would fail. The third is the authority group:
+each test reads the board, issues a request that must be refused, and reads the
+board again, asserting the two are identical. Seven of the tests are of that
+third kind, which is the property Section~\ref{sec:authority} claims.
+
+Beyond the required cases the suite also covers the robustness paths: an
+over-length frame and the recovery after it, non-printable bytes, a request
+split across two writes and reassembled, a CRLF terminator, and a checksum that
+is correct and one that is not.
+
+\subsection{Results from the board}
+\ph{Run the same suite against the flashed board with
+\texttt{python -m pytest tests -{}-port /dev/ttyACM0 -q} and paste that output
+here, labelled as the board run so it is not confused with the host run above.
+Note that pyserial must be installed first.}
+
+\ph{Add the two GUI screenshots to \texttt{figures/} and refer to them here:
+one mid-game showing a rejected move and its reason in the status line, and one
+after a win showing the cells disabled. Say what the reader should notice in
+each.}
+
+Nothing in this section claims a measurement that has not been taken: the
+figures quoted above are from the host build, and the board run is recorded
+separately once it has been performed.
+
+\begin{table}[htbp]
+\caption{Required test cases and where they are covered. Test names are shown without their \texttt{test\_} prefix.}
+\label{tab:tests}
+\centering
+\footnotesize
+\begin{tabular}{p{4.0cm}p{3.3cm}}
+\hline
+\textbf{Required by the brief} & \textbf{Test} \\
+\hline
+CONNECT returns OK & \texttt{connect\_\allowbreak returns\_\allowbreak ok} \\
+NEW returns an empty board & \texttt{new\_\allowbreak returns\_\allowbreak an\_\allowbreak empty\_\allowbreak board} \\
+A legal move changes the board & \texttt{a\_\allowbreak legal\_\allowbreak move\_\allowbreak changes\_\allowbreak the\_\allowbreak board\_\allowbreak exactly} \\
+Occupied cell rejected, board unchanged & \texttt{occupied\_\allowbreak cell\_\allowbreak is\_\allowbreak rejected\_\allowbreak and\_\allowbreak nothing\_\allowbreak changes} \\
+Out of range rejected & \texttt{out\_\allowbreak of\_\allowbreak range\_\allowbreak is\_\allowbreak rejected} \\
+Move after game over refused & \texttt{moves\_\allowbreak after\_\allowbreak game\_\allowbreak over\_\allowbreak are\_\allowbreak refused} \\
+Scripted win and draw & \texttt{a\_\allowbreak win\_\allowbreak is\_\allowbreak detected}, \texttt{a\_\allowbreak draw\_\allowbreak is\_\allowbreak detected} \\
+\hline
+\end{tabular}
+\end{table}

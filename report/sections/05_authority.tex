@@ -1,0 +1,26 @@
+\section{Game Logic and Server Authority}
+\label{sec:authority}
+
+Turn control is held entirely on the board. \texttt{g->turn} is advanced only
+after a move has been accepted and found not to end the game, so a rejected
+request cannot hand the turn to the other player either.
+
+A win is detected by testing the eight lines, three rows, three columns and two
+diagonals, for three identical marks immediately after the cell is written; a
+draw is the case where the board is full and no line was won. Both set
+GAME\_OVER, after which only \texttt{NEW}, \texttt{STATE} and
+\texttt{DISCONNECT} are accepted.
+
+The authority claim is that \textbf{no rejected request can change state}, and
+it rests on the structure quoted in Section~\ref{sec:impl} rather than on
+inspection of every path: the three validation checks all return before the
+sole write to the board. The claim is deliberately narrow enough to test from
+the outside, and Section~\ref{sec:valid} describes how the suite asserts it by
+reading the board with \texttt{STATE}, issuing a request expected to fail, and
+reading it again.
+
+The client is given no way to acquire authority. It holds no copy of the rules,
+it derives whose turn it is only for display, and every redraw is driven by a
+reply rather than by a local prediction. Replacing the client with a hostile one
+therefore changes nothing about what positions are reachable: the worst a
+modified client can do is send a request the server refuses.

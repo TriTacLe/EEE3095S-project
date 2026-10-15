@@ -5,6 +5,8 @@ __pycache__/
 report/*.aux
 report/*.log
 report/*.out
+report/*.bbl
+report/*.blg
 report/*.pdf
 sim/server_sim
 .claude/
