@@ -9,11 +9,12 @@ dropped as they arrive rather than buffered. A partial frame is abandoned after
 2000\,ms, so a client that dies mid-line releases the parser without
 intervention. A bare newline is ignored rather than answered.
 
-An unrecognised command is \texttt{NACK:BADCMD}, and a \texttt{MOVE} whose
-argument is missing or non-numeric is also \texttt{NACK:BADCMD}, while a numeric
-argument outside 0 to 8 is \texttt{NACK:RANGE}. The two are distinguished
-because they indicate different client faults: the first is a malformed
-request, the second a well-formed request for an impossible cell.
+An unrecognised command is \texttt{NACK:BADCMD}. The index on a \texttt{MOVE}
+is exactly one digit, so \texttt{MOVE:9} is a well-formed request for a cell
+that does not exist and is answered \texttt{NACK:RANGE}, while
+\texttt{MOVE:99}, \texttt{MOVE:-1} and \texttt{MOVE:} are malformed and are
+answered \texttt{NACK:BADCMD}. The two are distinguished because they indicate
+different client faults, and both were confirmed against the board.
 
 Every rejection is explicit. The server never answers silence, so a client can
 always distinguish a refused request from a lost one by timeout alone.

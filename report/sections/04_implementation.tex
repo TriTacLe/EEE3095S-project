@@ -49,5 +49,6 @@ rate register is the divisor itself, so \texttt{BRR} is 417, which gives
 115\,107 baud and an error of 0.08\,per cent.
 
 The release build occupies 4984 bytes of flash and 2720 bytes of RAM, against
-the 32\,kB and 8\,kB available on the STM32F051C6, so neither is close to a
-constraint.
+the 32\,kB of flash and 8\,kB of RAM that the linker script reserves. The board
+used here in fact reports 64\,kB of flash and 8\,kB of RAM when probed, so
+neither figure is close to a constraint either way.
