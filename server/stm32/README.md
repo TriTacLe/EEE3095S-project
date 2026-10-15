@@ -14,7 +14,8 @@ of every source and the host simulator in `sim/` compiles the same files. See
 
 ## Pins
 
-Button0 on PA0, behind a pull-up and so active low. LED0 on PB0. Both taken
+Button0 on PA0, behind a pull-up and so active low. LED0 on PB0: solid while X
+is to move, off while O is, blinking whenever no game is running. Both taken
 from the Practical 1A and 1B projects that ran on this board, where the buttons
 sit on PA0 to PA3 and the LEDs on PB0 to PB7.
 

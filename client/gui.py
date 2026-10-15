@@ -73,10 +73,12 @@ class Client(tk.Tk):
             activebackground="#1b3fae", padx=16, pady=8, command=self.on_new,
         )
         self.new_button.pack(side="left")
-        tk.Button(
+        self.resign_button = tk.Button(
             row, text="Resign", font=self.text_font, fg=FG, bg="#e6e6e3",
-            padx=16, pady=8, command=lambda: self.send("RESIGN"),
-        ).pack(side="left", padx=8)
+            padx=16, pady=8, state="disabled",
+            command=lambda: self.send("RESIGN"),
+        )
+        self.resign_button.pack(side="left", padx=8)
         tk.Button(
             row, text="Disconnect", font=self.text_font, fg=FG, bg="#e6e6e3",
             padx=16, pady=8, command=self.on_quit,
@@ -124,6 +126,7 @@ class Client(tk.Tk):
 
     def draw(self, board):
         live = self.playable
+        self.resign_button.config(state="normal" if live else "disabled")
         for i, cell in enumerate(board[:9]):
             self.cells[i].config(text=" " if cell == "." else cell,
                                  state="normal" if live else "disabled",
@@ -131,6 +134,7 @@ class Client(tk.Tk):
                                  disabledforeground=FG)
 
     def lock_board(self):
+        self.resign_button.config(state="disabled")
         for b in self.cells:
             b.config(state="disabled", bg=CELL_LOCKED, disabledforeground=FG)
 
