@@ -5,11 +5,14 @@ The demonstration video is available at
 \url{https://www.youtube.com/watch?v=JrKrHBp4w70}. It is unlisted rather than
 private, so the link opens without a YouTube account.
 
-It shows, in order: opening the port and connecting; a new game; a legal move
-and the redraw that follows it; a rejected move with its reason in the status
-line and the board visibly unchanged; a win, after which the cells are disabled;
-the on-board button starting a fresh game; the LED reporting whose turn it is;
-and a clean disconnect. Both the board and the screen are in frame.
+It shows the client connecting to the flashed board and games played through
+the GUI: a new game, legal moves each confirmed by the server before the board
+is redrawn, a resignation, and a game played out to a win, after which the
+cells and the Resign button are both disabled. The board is in frame beside the
+screen throughout, with the on-board button and LED visible. A refused move is
+not demonstrated in the video; Fig.~\ref{fig:gui-rejected} shows that case
+instead, and Section~\ref{sec:valid} asserts it automatically in seven of the
+thirty-three tests.
 
 \section{Code}
 \label{sec:code}
