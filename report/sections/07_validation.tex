@@ -68,10 +68,37 @@ IDLE from any of the three states. The simulator's version of the same method
 does nothing.
 
 \subsection{The client against the board}
-\ph{Add the two GUI screenshots to \texttt{figures/} and refer to them here:
-one mid-game showing a rejected move and its reason in the status line, and one
-after a win showing the cells disabled. Say what the reader should notice in
-each.}
+Figs.~\ref{fig:gui-rejected} and~\ref{fig:gui-win} are the Tkinter client
+driven against the flashed board over the same virtual COM port, not against
+the simulator.
+
+In Fig.~\ref{fig:gui-rejected} the player has clicked a cell that is already
+occupied. What the reader should notice is what did \emph{not} happen: the
+status line carries the server's reason, and the board still shows exactly the
+X and the O that were there before the click. The client did not decide the
+move was illegal and did not repaint speculatively; it forwarded the click and
+rendered the \texttt{NACK:OCCUPIED} it got back.
+
+In Fig.~\ref{fig:gui-win} X has taken the top row. The cells are greyed and
+disabled, so the finished board reads as inactive at a glance, and New Game is
+the only move left. The marks stay in full contrast because the position is
+still the thing worth reading.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.74\columnwidth]{figures/gui_rejected.png}
+\caption{The client mid-game after a move the server refused. The reason is
+shown verbatim and the board is unchanged.}
+\label{fig:gui-rejected}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.74\columnwidth]{figures/gui_win.png}
+\caption{The client after a win. The cells are disabled and greyed, and further
+moves are refused by the client as well as by the server.}
+\label{fig:gui-win}
+\end{figure}
 
 Every figure quoted in this section was measured on the run it describes, and
 each run is labelled with the target it was taken against.
