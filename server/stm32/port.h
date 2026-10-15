@@ -1,5 +1,3 @@
-/* What the application needs from the board. The board side implements these
- * and nothing else, which is why app.c has no HAL in it. */
 #ifndef PORT_H
 #define PORT_H
 

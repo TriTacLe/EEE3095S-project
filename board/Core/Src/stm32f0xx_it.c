@@ -1,5 +1,3 @@
-/* Core exception handlers, the HAL millisecond time base and the USART receive
- * interrupt that feeds the frame parser. */
 #include "main.h"
 #include "stm32f0xx_it.h"
 #include "port.h"

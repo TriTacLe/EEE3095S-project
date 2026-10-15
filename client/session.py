@@ -1,9 +1,3 @@
-"""Turning a server reply into what the window should show.
-
-Kept apart from the widgets so it can be tested without a display, and so the
-GUI has no rules of its own: every branch here reacts to what the server said.
-"""
-
 REJECTIONS = {
     "NACK:OCCUPIED": "That cell is taken.",
     "NACK:RANGE": "That cell is not on the board.",

@@ -1,4 +1,3 @@
-/* The board-side application: the server plus the button and the LED. */
 #ifndef APP_H
 #define APP_H
 

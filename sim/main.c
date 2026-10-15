@@ -1,9 +1,3 @@
-/* Host build of the board application. Same core, same app.c, same button and
- * LED logic as the firmware; stdin and stdout stand in for the UART, so the
- * tests and the GUI run with no hardware present.
- *
- * The button is never down and the LED goes to stderr, so a test run shows
- * turn changes without polluting the protocol stream. */
 #include <stdio.h>
 #include <time.h>
 

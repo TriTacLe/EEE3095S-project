@@ -1,5 +1,3 @@
-/* HAL infrastructure only. The USART is configured from registers in
- * port_stm32.c, so there is no peripheral MSP callback here. */
 #include "main.h"
 
 void HAL_MspInit(void)
