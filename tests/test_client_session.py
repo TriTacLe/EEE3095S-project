@@ -1,5 +1,3 @@
-"""The client's reading of server replies, with no window in the way."""
-
 import pathlib
 import sys
 

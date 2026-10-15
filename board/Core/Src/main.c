@@ -1,7 +1,3 @@
-/* EEE3095S project: the Serial Game Server on the STM32F051 course board.
- * The clock and the two GPIOs come up here, the USART comes up in port_stm32.c,
- * and the game itself stays in server/core so it can be tested on a PC.
- */
 #include "main.h"
 #include "app.h"
 #include "port.h"

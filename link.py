@@ -1,9 +1,3 @@
-"""Two ways to talk to the server: the host simulator, or a real serial port.
-
-The tests never know which one they got, so the same suite covers the laptop
-build and the board.
-"""
-
 import subprocess
 import time
 

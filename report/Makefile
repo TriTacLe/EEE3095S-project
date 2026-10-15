@@ -1,6 +1,3 @@
-# Build the report. Two latex passes either side of bibtex so refs resolve.
-#   make        build the PDF
-#   make check  build, then list what is still unwritten
 TEX = main
 
 all: $(TEX).pdf

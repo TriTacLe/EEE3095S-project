@@ -1,5 +1,3 @@
-"""The cases the brief asks for, plus the robustness ones it marks separately."""
-
 import pytest
 
 EMPTY = "OK:BOARD:........."

@@ -1,10 +1,3 @@
-"""Tic-tac-toe client. Tkinter, so nothing beyond the standard library is
-needed unless you connect to a real board, which wants pyserial.
-
-The client draws what the server confirms and nothing else. It does not decide
-whether a move is legal, and a NACK is shown to the player as it arrived.
-"""
-
 import argparse
 import pathlib
 import queue
@@ -164,7 +157,8 @@ class Client(tk.Tk):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(
+        description="Tic-tac-toe client for the serial game server.")
     ap.add_argument("--port", help="serial port of the board, e.g. /dev/ttyACM0")
     ap.add_argument("--sim", action="store_true", help="use the host simulator")
     args = ap.parse_args()

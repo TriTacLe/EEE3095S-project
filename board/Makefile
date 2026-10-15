@@ -1,7 +1,3 @@
-# Serial Game Server, board build for the STM32F051C6 on the UCT dev board.
-# Standalone GNU Arm build so the project builds without the IDE; CubeIDE has
-# its own managed Debug/Release builds in .cproject.
-
 .DEFAULT_GOAL := all
 
 TARGET := GameServer

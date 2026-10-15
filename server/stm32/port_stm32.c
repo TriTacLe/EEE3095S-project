@@ -1,15 +1,3 @@
-/* The only file that knows about the board.
- *
- * GPIO goes through the HAL because the GPIO driver ships with the course
- * project. The USART does not: the HAL that comes with the prac projects has no
- * UART driver at all, so USART1 is brought up from registers against RM0091,
- * which is also how the practicals drive their peripherals.
- *
- * USART1 is PA9 for TX and PA10 for RX on AF1. On the current UCT dev board
- * both are wired on-board to the ST-LINK, which doubles as a USB virtual COM
- * port, so the cable used for flashing also carries the serial link and no UART
- * adapter is needed (course announcement, 5 October 2026).
- */
 #include <string.h>
 #include "main.h"          /* pin macros and stm32f0xx_hal.h */
 #include "app.h"

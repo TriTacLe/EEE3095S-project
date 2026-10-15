@@ -1,5 +1,3 @@
-/* Tic-tac-toe rules. No hardware, no I/O: this file builds for the STM32 and
- * for the host test build unchanged. */
 #ifndef GAME_H
 #define GAME_H
 

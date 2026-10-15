@@ -1,6 +1,3 @@
-/* Framing, parsing and dispatch. Feed it bytes as they arrive; it hands back a
- * complete response line when a request has been dealt with. Nothing here
- * touches hardware either. */
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
