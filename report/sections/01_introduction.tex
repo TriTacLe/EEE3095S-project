@@ -35,15 +35,45 @@ the parser a small finite-state machine (FSM) that can be reasoned about and
 fuzzed from a test. The practical consequence is that a rule bug is found in
 milliseconds on a laptop rather than on the bench with a debugger.
 
-\textbf{Task allocation.} This project was done individually, so there is no
-split of work between two students to report. It was nonetheless organised as if
-it were a team: each piece of functionality was developed on its own branch and
-merged through a pull request, with the game core, the protocol, the GUI, the
-board application and the documentation each landing separately. Reviewing one's
-own pull request catches less than a second reader would, but it still forces
-the diff to be read once in isolation, keeps unrelated changes from travelling
-together, and leaves a history in which each change can be read, and if
-necessary reverted, on its own.
+\textbf{Project plan and task allocation.} This project was done
+individually, so there is no split of work between two students to report.
+Table~\ref{tab:plan} lists the activities and the milestone each one reached.
+The ordering was deliberate rather than incidental: the protocol was settled
+first because every other part is specified against it, and the hardware-free
+core and its test suite came next so that the rules were finished and proven
+before any board was involved. Board bring-up was therefore the last technical
+activity rather than the first, which is the opposite of the usual order and is
+what kept the bench work short.
+
+\begin{table}[htbp]
+\caption{Activities and milestones, dated from the repository history}
+\label{tab:plan}
+\centering
+\footnotesize
+\begin{tabular}{p{0.8cm}p{3.6cm}p{2.7cm}}
+\hline
+\textbf{Date} & \textbf{Activity} & \textbf{Milestone} \\
+\hline
+23 Sep & Settle and document the protocol & Command set frozen \\
+23 Sep & Game core, frame parser, host simulator, test suite & Rules pass on a PC \\
+23 Sep & Tkinter client, reply handling split out & Playable against the simulator \\
+23 Sep & Board application, port layer, button and LED & Hardware-free app complete \\
+23 Sep & Design diagrams and report skeleton & Deliverables mapped \\
+15 Oct & CubeIDE project, USART1 from registers & Firmware builds for ARM \\
+15 Oct & Flash and bring up the board & Suite passes on hardware \\
+15 Oct & Report onto the course template & All eleven headings filled \\
+25 Oct & Submission & Report and code handed in \\
+\hline
+\end{tabular}
+\end{table}
+
+The work was organised as if it were a team: each piece of functionality was
+developed on its own branch and merged through a pull request, with the game
+core, the protocol, the GUI, the board application and the documentation each
+landing separately. Reviewing one's own pull request catches less than a second
+reader would, but it still forces the diff to be read once in isolation, keeps
+unrelated changes from travelling together, and leaves a history in which each
+change can be read, and if necessary reverted, on its own.
 
 \textbf{Structure.} Section~\ref{sec:protocol} defines the message protocol,
 since every other part of the system is specified against it.

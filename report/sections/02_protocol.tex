@@ -59,6 +59,67 @@ which is what lets the client distinguish a refused request from a lost one.
 \end{tabular}
 \end{table}
 
+\subsection{One request, one reply, always in that order}
+Fig.~\ref{fig:seq} walks a whole session. The reader should notice two things.
+The server never speaks first, so the client never has to listen for traffic it
+did not ask for; and the rejected move in the middle produces a reply like any
+other, after which the board is still exactly what it was before the request.
+The terminal move is the one case where the reply carries no board, so the
+client issues \texttt{STATE} to draw the final position rather than inferring
+it.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Stealth,
+    msg/.style={->, shorten >=1pt},
+    lbl/.style={font=\scriptsize, inner sep=1.5pt}]
+
+  \node[draw, minimum width=1.5cm, minimum height=0.5cm] (c) at (0,0) {GUI};
+  \node[draw, minimum width=1.5cm, minimum height=0.5cm] (s) at (4.7,0) {STM32};
+  \draw[dashed] (c.south) -- ++(0,-7.7);
+  \draw[dashed] (s.south) -- ++(0,-7.7);
+
+  \def\L{0}   \def\R{4.7}
+  \draw[msg] (\L,-0.70) -- node[lbl, above]{\texttt{CONNECT}} (\R,-0.70);
+  \draw[msg] (\L,-1.40) -- node[lbl, above]{\texttt{NEW}} (\R,-1.40);
+  \draw[msg] (\L,-2.10) -- node[lbl, above]{\texttt{MOVE:0}} (\R,-2.10);
+  \draw[msg] (\L,-2.80) -- node[lbl, above]{\texttt{MOVE:0}} (\R,-2.80);
+  \draw[msg] (\L,-3.50) -- node[lbl, above]{\texttt{MOVE:3}} (\R,-3.50);
+  \draw[msg] (\L,-4.20) -- node[lbl, above]{\texttt{MOVE:1}} (\R,-4.20);
+  \draw[msg] (\L,-4.90) -- node[lbl, above]{\texttt{MOVE:4}} (\R,-4.90);
+  \draw[msg] (\L,-5.60) -- node[lbl, above]{\texttt{MOVE:2}} (\R,-5.60);
+  \draw[msg] (\L,-6.30) -- node[lbl, above]{\texttt{STATE}} (\R,-6.30);
+  \draw[msg] (\L,-7.00) -- node[lbl, above]{\texttt{DISCONNECT}} (\R,-7.00);
+
+  \draw[msg] (\R,-1.05) -- node[lbl, above]{\texttt{OK}} (\L,-1.05);
+  \draw[msg] (\R,-1.75) -- node[lbl, above]{\texttt{OK:BOARD:.........}} (\L,-1.75);
+  \draw[msg] (\R,-2.45) -- node[lbl, above]{\texttt{OK:BOARD:X........}} (\L,-2.45);
+  \draw[msg] (\R,-3.15) -- node[lbl, above]{\texttt{NACK:OCCUPIED}} (\L,-3.15);
+  \draw[msg] (\R,-3.85) -- node[lbl, above]{\texttt{OK:BOARD:X..O.....}} (\L,-3.85);
+  \draw[msg] (\R,-4.55) -- node[lbl, above]{\texttt{OK:BOARD:XX.O.....}} (\L,-4.55);
+  \draw[msg] (\R,-5.25) -- node[lbl, above]{\texttt{OK:BOARD:XX.OO....}} (\L,-5.25);
+  \draw[msg] (\R,-5.95) -- node[lbl, above]{\texttt{WIN:X}} (\L,-5.95);
+  \draw[msg] (\R,-6.65) -- node[lbl, above]{\texttt{BOARD:XXXOO....}} (\L,-6.65);
+  \draw[msg] (\R,-7.35) -- node[lbl, above]{\texttt{OK}} (\L,-7.35);
+
+  \node[lbl, anchor=west, text width=2.6cm] at (5.05,-3.15)
+    {board unchanged,\\still \texttt{X........}};
+  \node[lbl, anchor=west, text width=2.6cm] at (5.05,-5.95)
+    {terminal reply,\\it carries no board};
+  \node[lbl, anchor=west, text width=2.6cm] at (5.05,-6.65)
+    {so the client asks\\for the final board};
+
+  \node[lbl, anchor=north west, text width=7.4cm] at (-0.4,-8.0)
+    {Every arrow is one line ending in \texttt{\textbackslash n}. The server
+     never sends unprompted.};
+\end{tikzpicture}
+\caption{A session from connect to disconnect, transcribed from a run against
+the flashed board: a legal move, the same move refused with the board
+unchanged, a winning move whose reply carries no board, and the \texttt{STATE}
+that redraws the final position.}
+\label{fig:seq}
+\end{figure}
+
 \subsection{Four departures from the reference protocol}
 Each departure closes a failure the reference protocol in the brief leaves
 open, and none of them changes a response the brief specifies.
