@@ -192,8 +192,10 @@ Button0 is on PA0 behind a pull-up, so a press reads low, and the application
 debounces it over 20\,ms and then feeds a synthetic \texttt{NEW} through the
 server rather than resetting the game behind the protocol's back. LED0 is on
 PB0 and reports whose turn it is: solid while X is to move, off while O is, and
-blinking at 400\,ms once the game is over. A glance at the board therefore says
-whose turn it is without looking at the GUI.
+blinking at 400\,ms whenever no game is running, which covers both the idle
+board before the first game and a finished one. A glance at the board therefore
+says whose turn it is, or that there is no turn to take, without looking at the
+GUI.
 
 \begin{figure}[htbp]
 \centering
@@ -225,6 +227,6 @@ whose turn it is without looking at the GUI.
 \caption{UART path and board I/O. One USB cable carries both the programming
 interface and the virtual COM port that USART1 is wired to. Button0 is active
 low and starts a new game; LED0 is solid while X is to move, off while O is,
-and blinks at 400\,ms once the game is over.}
+and blinks at 400\,ms whenever no game is running.}
 \label{fig:circuit}
 \end{figure}
